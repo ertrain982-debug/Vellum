@@ -83,16 +83,26 @@
   .card.done .flag.d{display:grid;background:var(--ok);color:#0C1F16;right:auto;left:7px}
 
 /* карточка коллекции */
-  .tile{width:132px;aspect-ratio:3/4;border-radius:14px;background:var(--card);
-    border:1px solid var(--line);display:flex;flex-direction:column;
+  .tile{position:relative;overflow:hidden;width:132px;aspect-ratio:3/4;border-radius:14px;
+    background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;
     justify-content:flex-end;padding:13px;gap:5px;text-align:left;
     transition:transform .11s ease}
   .tile:active{transform:scale(.955)}
   .tile .em{font-size:23px;line-height:1;margin-bottom:auto}
-  .tile .t{font-size:13px;font-weight:600}
-  .tile .s{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .tile .t{font-size:13px;font-weight:600;position:relative;z-index:2}
+  .tile .s{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;position:relative;z-index:2}
+  .tile.has .s{color:rgba(236,234,230,.72)}
+
+  /* превью последних эскизов внутри коллекции */
+  .tile .pv{position:absolute;inset:0;display:flex;z-index:0}
+  .tile .pv img{flex:1;min-width:0;height:100%;object-fit:cover;background:#fff}
+  .tile.has::after{content:'';position:absolute;inset:0;z-index:1;
+    background:linear-gradient(180deg,rgba(14,14,16,.12) 0%,rgba(14,14,16,.5) 52%,rgba(14,14,16,.88) 100%)}
+
   .tile.new{border-style:dashed;border-color:rgba(232,184,75,.42)}
   .tile.new .em{color:var(--hot)}
+  .tile.get{border-style:dashed;border-color:rgba(95,184,139,.42)}
+  .tile.get .em{color:var(--ok)}
 
 /* платный пак */
   .card.lock.blur img{filter:blur(7px) saturate(.55) brightness(.62);transform:scale(1.14)}
@@ -130,14 +140,15 @@
     opacity:0;pointer-events:none;transition:opacity .24s;z-index:60}
   #veil.on{opacity:1;pointer-events:auto}
 
-  #sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;
+  #sheet, #howto{position:fixed;left:0;right:0;bottom:0;z-index:61;
     background:var(--card);border-top:1px solid var(--line);
     border-radius:20px 20px 0 0;padding:8px 18px calc(20px + var(--bot));
     transform:translateY(102%);transition:transform .3s cubic-bezier(.22,.8,.3,1)}
-  #sheet.on{transform:none}
-  #sheet .pull{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
-  #sheet h3{margin:0 0 6px;font-size:19px;font-weight:650;letter-spacing:-.01em}
-  #sheet p{margin:0 0 16px;color:var(--dim);font-size:13px;line-height:1.6}
+  #sheet.on, #howto.on{transform:none}
+  #sheet .pull, #howto .pull{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+  #sheet h3, #howto h3{margin:0 0 6px;font-size:19px;font-weight:650;letter-spacing:-.01em}
+  #sheet p, #howto p{margin:0 0 16px;color:var(--dim);font-size:13px;line-height:1.6}
+  #howto p#ht-p{color:var(--ink);font-size:14px}
   #sheet .strip{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 18px;padding:0 18px;
     scrollbar-width:none}
   #sheet .strip::-webkit-scrollbar{display:none}
@@ -267,6 +278,14 @@
   <p class="fine">Один эскиз из пака открыт — попробуй, прежде чем покупать.</p>
 </div>
 
+<!-- как установить, если браузер не умеет сам -->
+<div id="howto" role="dialog" aria-modal="true" aria-labelledby="ht-t">
+  <div class="pull"></div>
+  <h3 id="ht-t">Установить на главный экран</h3>
+  <p id="ht-p"></p>
+  <p class="fine">Приложение откроется на весь экран и будет работать без интернета.</p>
+</div>
+
 <div id="toast"></div>
 <input id="file" type="file" accept="image/*" multiple hidden>
 
@@ -320,8 +339,8 @@ const PACK = {
   id:'pack01',
   title:'Анатомия',
   note:'20 эскизов фигуры в одном стиле — пропорции, позы, движение. От простой стойки к сложному ракурсу.',
-  price:'$2',
-  payUrl:'',
+  price:'$5',
+  payUrl:'https://app.lava.top/products/0c356d2d-85f7-4693-8747-7b79fc7dde49',
   items:[
     {id:'pk1', name:'',          file:'pack-1.png', state:'locked'},
     {id:'pk2', name:'Образец',   file:'pack-2.png', state:'free'},
@@ -392,9 +411,6 @@ const allBuiltin = () => CATALOG.flatMap(c => builtinList(c.id));
 const mineList = () => mine.map(it => ({...it, builtin:false, src:null}));
 const everything = () => [...mineList(), ...allBuiltin()];
 
-const countFav  = () => everything().filter(i => i.fav).length;
-const countDone = () => everything().filter(i => i.done).length;
-
 async function toggleFlag(it, key){
   if(it.builtin){
     const f = flags[it.id] || (flags[it.id] = {});
@@ -461,27 +477,39 @@ function shelves(){
   };
 
   /* ── мои коллекции ── */
-  const tile = (em, t, s, act) =>
-    `<button class="tile" data-act="${act}">
-       <span class="em">${em}</span><span class="t">${t}</span><span class="s">${s}</span>
+  const tile = (em, t, s, act, pics) => {
+    const face = pics.length
+      ? `<span class="pv">${pics.map(u => `<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</span>`
+      : `<span class="em">${em}</span>`;
+    return `<button class="tile${pics.length ? ' has' : ''}" data-act="${act}">
+       ${face}<span class="t">${t}</span><span class="s">${s}</span>
      </button>`;
+  };
 
-  const nf = countFav(), nd = countDone();
+  const pics = list => list.slice(0, 3).map(thumbSrc).filter(Boolean);
+  const favs = everything().filter(i => i.fav);
+  const dones = everything().filter(i => i.done);
+
   const my = shelf('Мои коллекции', '',
-      tile('★', 'Избранное', nf ? nf + ' эск.' : 'пусто', 'fav') +
-      tile('✓', 'Готово',    nd ? nd + ' эск.' : 'пусто', 'done') +
-      tile('☰', 'Мои загрузки', mine.length ? mine.length + ' эск.' : 'пусто', 'mine') +
+      tile('★', 'Избранное', favs.length ? favs.length + ' эск.' : 'пусто', 'fav', pics(favs)) +
+      tile('✓', 'Готово',    dones.length ? dones.length + ' эск.' : 'пусто', 'done', pics(dones)) +
+      tile('☰', 'Мои загрузки', mine.length ? mine.length + ' эск.' : 'пусто', 'mine', pics(mineList())) +
       `<button class="tile new" data-act="add">
          <span class="em">＋</span><span class="t">Добавить своё</span>
          <span class="s">из галереи</span>
-       </button>`);
+       </button>` +
+      (canInstall() ? `<button class="tile get" data-act="install">
+         <span class="em">⤓</span><span class="t">Установить</span>
+         <span class="s">на главный экран</span>
+       </button>` : ''));
 
   my.querySelector('.rail').onclick = e => {
     const b = e.target.closest('.tile'); if(!b) return;
     const a = b.dataset.act;
-    if(a === 'add') return $('file').click();
-    if(a === 'fav')  return openList('Избранное', everything().filter(i => i.fav), false);
-    if(a === 'done') return openList('Готово',    everything().filter(i => i.done), false);
+    if(a === 'add')     return $('file').click();
+    if(a === 'install') return doInstall();
+    if(a === 'fav')     return openList('Избранное', everything().filter(i => i.fav), false);
+    if(a === 'done')    return openList('Готово',    everything().filter(i => i.done), false);
     openList('Мои загрузки', mineList(), true);
   };
 
@@ -634,7 +662,57 @@ $('file').onchange = async e => {
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   6. ШТОРКА ПАКА
+   6. УСТАНОВКА НА ГЛАВНЫЙ ЭКРАН
+   ═══════════════════════════════════════════════════════════════
+   Chromium перед своим баннером кидает beforeinstallprompt — ловим
+   и вызываем установку своей кнопкой. Safari такого события не даёт,
+   там остаётся только текстовая подсказка.                        */
+let deferred = null;
+
+const isStandalone = () =>
+  matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+/* тайл прячем, если приложение уже стоит */
+const canInstall = () => !isStandalone();
+
+addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferred = e;
+  if($('lib').classList.contains('on')) shelves();
+});
+
+addEventListener('appinstalled', () => {
+  deferred = null;
+  ev('installed');
+  toast('Готово, приложение на главном экране');
+  if($('lib').classList.contains('on')) shelves();
+});
+
+function hint(){
+  const ua = navigator.userAgent;
+  if(/iPad|iPhone|iPod/.test(ua))
+    return 'Нажми «Поделиться» внизу браузера, пролистай список и выбери «На экран „Домой“».';
+  if(/Firefox/.test(ua))
+    return 'Открой меню браузера — три полоски справа — и выбери «Установить».';
+  return 'Открой меню браузера — три точки вверху — и выбери «Установить приложение» или «Добавить на главный экран».';
+}
+
+async function doInstall(){
+  ev('install-tap');
+  if(deferred){
+    deferred.prompt();
+    const r = await deferred.userChoice.catch(() => null);
+    deferred = null;
+    if(r && r.outcome !== 'accepted') toast('Можно установить позже — кнопка на месте');
+    return;
+  }
+  $('ht-p').textContent = hint();
+  $('veil').classList.add('on');
+  $('howto').classList.add('on');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. ШТОРКА ПАКА
    ═══════════════════════════════════════════════════════════════ */
 function openSheet(){
   $('sh-t').textContent = PACK.title;
@@ -650,6 +728,7 @@ function openSheet(){
 function closeSheet(){
   $('veil').classList.remove('on');
   $('sheet').classList.remove('on');
+  $('howto').classList.remove('on');
 }
 $('veil').onclick = closeSheet;
 $('buy').onclick = () => {
@@ -659,7 +738,7 @@ $('buy').onclick = () => {
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   7. ЭКРАН 3 — ОБВОДКА
+   8. ЭКРАН 3 — ОБВОДКА
    ═══════════════════════════════════════════════════════════════ */
 const cam = $('cam'), art = $('art'), grab = $('grab'), bar = $('bar');
 let track = null, current = null, camOn = false, artUrl = null, drawFrom = 'lib';
@@ -750,7 +829,7 @@ function closeDraw(){
 $('back').onclick = () => history.state?.draw ? history.back() : closeDraw();
 
 addEventListener('popstate', () => {
-  if($('sheet').classList.contains('on')) return closeSheet();
+  if($('sheet').classList.contains('on') || $('howto').classList.contains('on')) return closeSheet();
   if($('draw').classList.contains('on')) return closeDraw();
   if($('list').classList.contains('on')) closeList();
 });
@@ -841,7 +920,7 @@ $('hide').onclick = () => panel(false);
 $('tab').onclick  = () => panel(true);
 
 /* ═══════════════════════════════════════════════════════════════
-   8. СТАРТ
+   9. СТАРТ
    ═══════════════════════════════════════════════════════════════ */
 (async () => {
   db = await openDB();
