@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0E0E10">
+<meta name="description" content="Обводка рисунков через камеру телефона.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<title>Vellum</title>
+
+<!-- аналитика: анонимные заходы, источники, устройства, страны -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="add8cea2-7112-48df-b940-2f2b758fa536"></script>
+
+<style>
+  :root{
+    --bg:#0E0E10; --card:#1A1A1D; --ink:#ECEAE6; --dim:#807D77;
+    --line:rgba(255,255,255,.11); --sunk:rgba(255,255,255,.05);
+    --hot:#E8B84B; --ok:#5FB88B; --tap:52px;
+    --top:env(safe-area-inset-top); --bot:env(safe-area-inset-bottom);
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font:500 14px/1.35 system-ui,-apple-system,sans-serif;overscroll-behavior:none}
+  body{overflow:hidden}
+  button{font:inherit;color:inherit;border:0;background:none;padding:0}
+  [hidden]{display:none !important}
+  button:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+
+  .screen{position:fixed;inset:0;display:none;flex-direction:column}
+  .screen.on{display:flex}
+
+/* ============ ШАПКИ ============ */
+  .head{padding:calc(14px + var(--top)) 16px 10px;display:flex;align-items:center;gap:10px;flex:none}
+  .head h1{margin:0;font-size:22px;font-weight:650;letter-spacing:-.015em;flex:1}
+  .head h2{margin:0;font-size:17px;font-weight:600;flex:1}
+  .ico{width:40px;height:40px;border-radius:12px;background:var(--sunk);
+    display:grid;place-items:center;font-size:19px;flex:none}
+  .ico:active{background:var(--line)}
+  .ico.wide{width:auto;padding:0 14px;font-size:13px;font-weight:600}
+  .ico.act{background:var(--hot);color:#17150F}
+
+/* ============ ЭКРАН 1: ПОЛКИ ============ */
+  #shelves{flex:1;overflow-y:auto;padding-bottom:calc(28px + var(--bot));
+    -webkit-overflow-scrolling:touch}
+
+  .shelf{margin-bottom:26px;
+    animation:rise .42s cubic-bezier(.22,.8,.3,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+  .shelf-top{display:flex;align-items:baseline;gap:10px;padding:0 16px 11px}
+  .shelf-top h3{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em;flex:1}
+  .shelf-top .all{font-size:13px;color:var(--dim);padding:2px 0}
+  .shelf-top .cnt{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+  .rail{display:flex;gap:11px;overflow-x:auto;padding:2px 16px 4px;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .rail > *{scroll-snap-align:start;flex:none}
+
+/* карточка эскиза */
+  .card{position:relative;width:132px;aspect-ratio:3/4;border-radius:14px;
+    overflow:hidden;background:var(--card);border:1px solid var(--line);
+    transition:transform .11s ease}
+  .card:active{transform:scale(.955)}
+  .card img{width:100%;height:100%;object-fit:cover;display:block;
+    background:#fff;transition:opacity .15s}
+  .card.done img{opacity:.32}
+  .card.miss img{display:none}
+  .card.miss::after{content:'V';position:absolute;inset:0;display:grid;place-items:center;
+    font-size:38px;font-weight:600;color:rgba(236,234,230,.13)}
+
+  .card .name{position:absolute;left:0;right:0;bottom:0;padding:18px 9px 8px;font-size:11px;
+    color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.8));
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+
+  .flag{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;
+    display:none;place-items:center;font-size:12px;line-height:1;
+    background:rgba(10,10,12,.6);backdrop-filter:blur(6px)}
+  .card.fav .flag.f{display:grid;background:var(--hot);color:#17150F}
+  .card.done .flag.d{display:grid;background:var(--ok);color:#0C1F16;right:auto;left:7px}
+
+/* карточка коллекции */
+  .tile{width:132px;aspect-ratio:3/4;border-radius:14px;background:var(--card);
+    border:1px solid var(--line);display:flex;flex-direction:column;
+    justify-content:flex-end;padding:13px;gap:5px;text-align:left;
+    transition:transform .11s ease}
+  .tile:active{transform:scale(.955)}
+  .tile .em{font-size:23px;line-height:1;margin-bottom:auto}
+  .tile .t{font-size:13px;font-weight:600}
+  .tile .s{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .tile.new{border-style:dashed;border-color:rgba(232,184,75,.42)}
+  .tile.new .em{color:var(--hot)}
+
+/* платный пак */
+  .card.lock img{filter:blur(7px) saturate(.55) brightness(.62);transform:scale(1.14)}
+  .card.lock::before{content:'';position:absolute;inset:0;background:rgba(14,14,16,.3);z-index:1}
+  .card.lock .keyhole{position:absolute;inset:0;display:grid;place-items:center;
+    font-size:21px;z-index:2;color:rgba(236,234,230,.9)}
+  .shelf.paid .shelf-top h3::after{content:' 🔒';font-size:12px}
+  .pricetag{font-size:12px;font-weight:650;color:var(--hot);
+    border:1px solid rgba(232,184,75,.4);border-radius:99px;padding:3px 9px}
+
+/* ============ ЭКРАН 2: СПИСОК КАТЕГОРИИ ============ */
+  #grid{flex:1;overflow-y:auto;padding:4px 16px calc(28px + var(--bot));
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+    gap:12px;align-content:start;-webkit-overflow-scrolling:touch}
+  #grid .card{width:auto}
+  .empty{grid-column:1/-1;text-align:center;color:var(--dim);
+    padding:56px 24px;line-height:1.75;font-size:13px}
+  .empty b{color:var(--ink);display:block;margin-bottom:6px;font-size:14px}
+
+  .badge{position:absolute;top:7px;width:31px;height:31px;border-radius:50%;
+    display:grid;place-items:center;font-size:14px;line-height:1;z-index:3;
+    background:rgba(10,10,12,.62);backdrop-filter:blur(6px);color:#fff}
+  .badge.f{right:7px}
+  .badge.d{right:44px}
+  .badge.f.on{background:var(--hot);color:#17150F}
+  .badge.d.on{background:var(--ok);color:#0C1F16}
+  .badge.x{left:7px;right:auto;background:#E24B4A;color:#fff;font-size:15px}
+  #grid .card.fav .flag,#grid .card.done .flag{display:none}
+
+/* ============ ШТОРКА ПАКА ============ */
+  #veil{position:fixed;inset:0;background:rgba(6,6,8,.66);backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .24s;z-index:60}
+  #veil.on{opacity:1;pointer-events:auto}
+
+  #sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;
+    background:var(--card);border-top:1px solid var(--line);
+    border-radius:20px 20px 0 0;padding:8px 18px calc(20px + var(--bot));
+    transform:translateY(102%);transition:transform .3s cubic-bezier(.22,.8,.3,1)}
+  #sheet.on{transform:none}
+  #sheet .pull{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 16px}
+  #sheet h3{margin:0 0 6px;font-size:19px;font-weight:650;letter-spacing:-.01em}
+  #sheet p{margin:0 0 16px;color:var(--dim);font-size:13px;line-height:1.6}
+  #sheet .strip{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 18px;padding:0 18px;
+    scrollbar-width:none}
+  #sheet .strip::-webkit-scrollbar{display:none}
+  #sheet .strip img{width:74px;height:98px;flex:none;border-radius:10px;object-fit:cover;
+    background:var(--sunk);filter:blur(5px) brightness(.68) saturate(.5)}
+  #buy{width:100%;min-height:var(--tap);border-radius:13px;background:var(--hot);
+    color:#17150F;font-size:15px;font-weight:650;display:grid;place-items:center}
+  #buy:active{transform:scale(.985)}
+  #sheet .fine{margin:12px 0 0;font-size:11.5px;color:var(--dim);text-align:center}
+
+/* ============ ЭКРАН 3: ОБВОДКА ============ */
+  #cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+  #paper{position:fixed;inset:0;display:none;place-items:center;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.045) 0 1px,transparent 1px 26px),
+      radial-gradient(120% 90% at 50% 30%,#F2EFE7,#D9D4C6 65%,#A8A296);
+    color:rgba(0,0,0,.3);font-size:11px;letter-spacing:.15em;text-transform:uppercase}
+  #paper.on{display:grid}
+
+  #stage{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;overflow:hidden}
+  #art{max-width:100vw;max-height:100vh;transform-origin:center;will-change:transform;opacity:.5}
+  #art.lines{filter:grayscale(1) contrast(2.4) brightness(1.08)}
+  #art.inv{filter:invert(1) grayscale(1) contrast(2.4)}
+
+  #grab{position:fixed;inset:0;touch-action:none}
+  #grab.locked{pointer-events:none}
+
+  #back{position:fixed;top:calc(10px + var(--top));left:12px;width:44px;height:44px;
+    border-radius:50%;background:rgba(10,10,12,.62);backdrop-filter:blur(10px);
+    color:#fff;display:grid;place-items:center;font-size:20px;z-index:5}
+
+  #pin{position:fixed;top:calc(16px + var(--top));left:50%;transform:translateX(-50%);
+    padding:6px 14px;border-radius:14px;background:rgba(232,184,75,.92);color:#17150F;
+    display:none;font-size:12px;font-weight:600;z-index:5}
+  #pin.on{display:block}
+
+  #bar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + var(--bot));
+    background:rgba(20,20,22,.84);backdrop-filter:blur(14px);
+    border-top:1px solid rgba(255,255,255,.12);
+    display:flex;flex-direction:column;gap:9px;transition:transform .22s ease;z-index:5}
+  #bar.hid{transform:translateY(112%)}
+
+  .row{display:flex;gap:8px;align-items:center}
+  #bar .row button{flex:1;min-height:var(--tap);border-radius:10px;font-size:13px;
+    border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);
+    display:grid;place-items:center;padding:0 4px}
+  #bar .row button:active{background:rgba(255,255,255,.15)}
+  #bar .row button.on{background:var(--hot);border-color:var(--hot);color:#17150F}
+  #bar .row button:disabled{opacity:.3}
+  input[type=range]{flex:1;height:var(--tap);accent-color:var(--hot);background:none}
+  .val{width:44px;color:#8A8781;font-variant-numeric:tabular-nums;text-align:right;font-size:12px}
+
+  #tab{position:fixed;bottom:calc(8px + var(--bot));left:50%;transform:translateX(-50%);
+    width:100px;height:34px;border-radius:17px;background:rgba(20,20,22,.84);
+    border:1px solid rgba(255,255,255,.12);color:#8A8781;display:none;place-items:center;
+    backdrop-filter:blur(14px);font-size:12px;z-index:5}
+  #tab.on{display:grid}
+
+  #toast{position:fixed;left:50%;bottom:calc(96px + var(--bot));transform:translate(-50%,14px);
+    background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:13px;
+    opacity:0;pointer-events:none;transition:.25s;max-width:84vw;text-align:center;z-index:90}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+
+<!-- ЭКРАН 1: полки -->
+<section id="lib" class="screen on">
+  <div class="head">
+    <h1>Vellum</h1>
+    <button class="ico" id="add" aria-label="Добавить свой эскиз">＋</button>
+  </div>
+  <div id="shelves"></div>
+</section>
+
+<!-- ЭКРАН 2: список -->
+<section id="list" class="screen">
+  <div class="head">
+    <button class="ico" id="lback" aria-label="Назад">‹</button>
+    <h2 id="ltitle"></h2>
+    <button class="ico wide" id="edit" hidden>Удалить</button>
+  </div>
+  <div id="grid"></div>
+</section>
+
+<!-- ЭКРАН 3: обводка -->
+<section id="draw" class="screen">
+  <video id="cam" playsinline muted autoplay></video>
+  <div id="paper"><span>камера недоступна</span></div>
+  <div id="stage"><img id="art" alt=""></div>
+  <div id="grab"></div>
+  <button id="back" aria-label="Назад в библиотеку">‹</button>
+  <div id="pin">Зафиксировано</div>
+  <div id="bar">
+    <div class="row">
+      <input id="op" type="range" min="5" max="100" value="50" aria-label="Прозрачность">
+      <span class="val" id="opv">50%</span>
+    </div>
+    <div class="row">
+      <button id="lock">Зафиксировать</button>
+      <button id="torch" disabled>Фонарик</button>
+      <button id="fit">Сброс</button>
+    </div>
+    <div class="row">
+      <button id="lines">Линии</button>
+      <button id="inv">Инверсия</button>
+      <button id="fav2">★ В избранное</button>
+      <button id="hide">Скрыть</button>
+    </div>
+  </div>
+  <button id="tab">Панель</button>
+</section>
+
+<!-- шторка платного пака -->
+<div id="veil"></div>
+<div id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t">
+  <div class="pull"></div>
+  <h3 id="sh-t"></h3>
+  <p id="sh-p"></p>
+  <div class="strip" id="sh-strip"></div>
+  <button id="buy"></button>
+  <p class="fine">Разовая покупка. Пак останется на этом устройстве.</p>
+</div>
+
+<div id="toast"></div>
+<input id="file" type="file" accept="image/*" multiple hidden>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   1. КОНТЕНТ — правится здесь, остальной код трогать не нужно
+   ═══════════════════════════════════════════════════════════════
+   Картинки кладутся в папку img/ рядом с index.html.
+   Имя файла в поле file. Если файла нет — карточка покажет
+   заглушку с буквой V, приложение не сломается.               */
+
+const CATALOG = [
+  { id:'portraits', title:'Портреты', items:[
+    {id:'po1', name:'Анфас',        file:'portrait-01.jpg'},
+    {id:'po2', name:'Профиль',      file:'portrait-02.jpg'},
+    {id:'po3', name:'Три четверти', file:'portrait-03.jpg'},
+    {id:'po4', name:'Глаза',        file:'portrait-04.jpg'},
+    {id:'po5', name:'Губы и нос',   file:'portrait-05.jpg'},
+  ]},
+  { id:'animals', title:'Животные', items:[
+    {id:'an1', name:'Кот',           file:'animal-01.jpg'},
+    {id:'an2', name:'Котёнок',       file:'animal-02.jpg'},
+    {id:'an3', name:'Пёс',           file:'animal-03.jpg'},
+    {id:'an4', name:'Щенок',         file:'animal-04.jpg'},
+    {id:'an5', name:'Птица',         file:'animal-05.jpg'},
+  ]},
+  { id:'anime', title:'Аниме-стиль', items:[
+    {id:'am1', name:'Лицо',      file:'anime-01.jpg'},
+    {id:'am2', name:'Причёска',  file:'anime-02.jpg'},
+    {id:'am3', name:'Глаза',     file:'anime-03.jpg'},
+    {id:'am4', name:'Портрет',   file:'anime-04.jpg'},
+    {id:'am5', name:'В полроста',file:'anime-05.jpg'},
+  ]},
+  { id:'simple', title:'Простое и весёлое', items:[
+    {id:'si1', name:'Роза',      file:'simple-01.jpg'},
+    {id:'si2', name:'Череп',     file:'simple-02.jpg'},
+    {id:'si3', name:'Бабочка',   file:'simple-03.jpg'},
+    {id:'si4', name:'Леттеринг', file:'simple-04.jpg'},
+    {id:'si5', name:'Луна',      file:'simple-05.jpg'},
+  ]},
+];
+
+/* Платный пак. payUrl — ссылка на оплату (lava.top и т.п.).
+   Пока пусто — кнопка честно скажет, что оплата ещё не открыта. */
+const PACK = {
+  id:'pack01',
+  title:'Портреты: расширенный пак',
+  note:'20 эскизов в одном стиле — лица, ракурсы, руки. Рисуются от простого к сложному.',
+  price:'$2',
+  payUrl:'',
+  items:[
+    {id:'pk1', name:'', file:'pack-01.jpg'},
+    {id:'pk2', name:'', file:'pack-02.jpg'},
+    {id:'pk3', name:'', file:'pack-03.jpg'},
+    {id:'pk4', name:'', file:'pack-04.jpg'},
+    {id:'pk5', name:'', file:'pack-05.jpg'},
+    {id:'pk6', name:'', file:'pack-06.jpg'},
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   2. СЛУЖЕБНОЕ
+   ═══════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const ev = (name, data) => { try{ window.umami && umami.track(name, data); }catch(e){} };
+
+let toastT;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600);
+}
+
+/* ── хранилище ──────────────────────────────────────────────────
+   Загрузки пользователя лежат на телефоне (IndexedDB), не на сервере.
+   Очистка данных Chrome их сотрёт — это ограничение веба.        */
+let db;
+const openDB = () => new Promise((res, rej) => {
+  const r = indexedDB.open('vellum', 1);
+  r.onupgradeneeded = () => {
+    const d = r.result;
+    if(!d.objectStoreNames.contains('sk'))   d.createObjectStore('sk', {keyPath:'id'});
+    if(!d.objectStoreNames.contains('meta')) d.createObjectStore('meta');
+  };
+  r.onsuccess = () => res(r.result);
+  r.onerror   = () => rej(r.error);
+});
+const st = (s, m='readonly') => db.transaction(s, m).objectStore(s);
+const rq = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+
+const allSk = ()    => rq(st('sk').getAll());
+const putSk = o     => rq(st('sk','readwrite').put(o));
+const delSk = id    => rq(st('sk','readwrite').delete(id));
+const getM  = k     => rq(st('meta').get(k));
+const setM  = (k,v) => rq(st('meta','readwrite').put(v, k));
+
+/* ═══════════════════════════════════════════════════════════════
+   3. МОДЕЛЬ
+   ═══════════════════════════════════════════════════════════════
+   Встроенные эскизы — файлы в img/. Загруженные — блобы в IndexedDB.
+   Общий вид карточки: {id, name, builtin, src|blob, fav, done}.
+   Коллекции — это не отдельное хранилище, а фильтр по флагам.     */
+
+let flags = {};      // флаги встроенных эскизов: {id:{fav,done}}
+let mine  = [];      // загрузки пользователя
+let urls  = [];      // объектные URL превью — чистятся при перерисовке
+
+function builtinList(catId){
+  const cat = CATALOG.find(c => c.id === catId);
+  if(!cat) return [];
+  return cat.items.map(s => {
+    const f = flags[s.id] || {};
+    return {id:s.id, name:s.name, builtin:true, src:'img/' + s.file,
+            fav:!!f.fav, done:!!f.done};
+  });
+}
+const allBuiltin = () => CATALOG.flatMap(c => builtinList(c.id));
+const mineList = () => mine.map(it => ({...it, builtin:false, src:null}));
+const everything = () => [...mineList(), ...allBuiltin()];
+
+const countFav  = () => everything().filter(i => i.fav).length;
+const countDone = () => everything().filter(i => i.done).length;
+
+async function toggleFlag(it, key){
+  if(it.builtin){
+    const f = flags[it.id] || (flags[it.id] = {});
+    f[key] = !f[key];
+    await setM('flags', flags);
+  }else{
+    const rec = mine.find(m => m.id === it.id);
+    if(!rec) return;
+    rec[key] = !rec[key];
+    await putSk(rec);
+  }
+  it[key] = !it[key];
+}
+
+/* превью для загруженных: ужимаем, чтобы сетка не тормозила */
+async function makeThumb(file, max = 420){
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  bmp.close();
+  return new Promise(r => c.toBlob(r, 'image/jpeg', .82));
+}
+
+function thumbSrc(it){
+  if(it.builtin) return it.src;
+  const rec = mine.find(m => m.id === it.id);
+  if(!rec) return '';
+  const u = URL.createObjectURL(rec.thumb || rec.blob);
+  urls.push(u);
+  return u;
+}
+
+function freeUrls(){ urls.forEach(URL.revokeObjectURL); urls = []; }
+
+/* ═══════════════════════════════════════════════════════════════
+   4. ЭКРАН 1 — ПОЛКИ
+   ═══════════════════════════════════════════════════════════════ */
+
+function cardHTML(it, i){
+  return `<button class="card${it.fav?' fav':''}${it.done?' done':''}" data-i="${i}">
+      <img src="${esc(thumbSrc(it))}" alt="" loading="lazy"
+           onerror="this.closest('.card').classList.add('miss')">
+      <span class="flag f">★</span><span class="flag d">✓</span>
+      ${it.name ? `<span class="name">${esc(it.name)}</span>` : ''}
+    </button>`;
+}
+
+function shelves(){
+  freeUrls();
+  const box = $('shelves');
+  box.innerHTML = '';
+  let delay = 0;
+
+  const shelf = (title, right, inner, cls='') => {
+    const s = document.createElement('section');
+    s.className = 'shelf ' + cls;
+    s.style.animationDelay = delay + 'ms'; delay += 55;
+    s.innerHTML = `<div class="shelf-top"><h3>${title}</h3>${right}</div>
+                   <div class="rail">${inner}</div>`;
+    box.appendChild(s);
+    return s;
+  };
+
+  /* ── мои коллекции ── */
+  const tile = (em, t, s, act) =>
+    `<button class="tile" data-act="${act}">
+       <span class="em">${em}</span><span class="t">${t}</span><span class="s">${s}</span>
+     </button>`;
+
+  const nf = countFav(), nd = countDone();
+  const my = shelf('Мои коллекции', '',
+      tile('★', 'Избранное', nf ? nf + ' эск.' : 'пусто', 'fav') +
+      tile('✓', 'Готово',    nd ? nd + ' эск.' : 'пусто', 'done') +
+      tile('☰', 'Мои загрузки', mine.length ? mine.length + ' эск.' : 'пусто', 'mine') +
+      `<button class="tile new" data-act="add">
+         <span class="em">＋</span><span class="t">Добавить своё</span>
+         <span class="s">из галереи</span>
+       </button>`);
+
+  my.querySelector('.rail').onclick = e => {
+    const b = e.target.closest('.tile'); if(!b) return;
+    const a = b.dataset.act;
+    if(a === 'add') return $('file').click();
+    if(a === 'fav')  return openList('Избранное', everything().filter(i => i.fav), false);
+    if(a === 'done') return openList('Готово',    everything().filter(i => i.done), false);
+    openList('Мои загрузки', mineList(), true);
+  };
+
+  /* ── категории библиотеки ── */
+  for(const cat of CATALOG){
+    const list = builtinList(cat.id);
+    const s = shelf(esc(cat.title), '<span class="all">все ›</span>',
+                    list.map(cardHTML).join(''));
+    s.querySelector('.all').onclick = () => openList(cat.title, builtinList(cat.id), false);
+    s.querySelector('.rail').onclick = e => {
+      const b = e.target.closest('.card'); if(!b) return;
+      openDraw(builtinList(cat.id)[+b.dataset.i]);
+    };
+  }
+
+  /* ── платный пак ── */
+  const locked = PACK.items.map(p =>
+    `<span class="card lock">
+       <img src="img/${esc(p.file)}" alt="" loading="lazy"
+            onerror="this.closest('.card').classList.add('miss')">
+       <span class="keyhole">🔒</span>
+     </span>`).join('');
+  const paid = shelf(esc(PACK.title),
+      `<span class="pricetag">${esc(PACK.price)}</span>`, locked, 'paid');
+  paid.onclick = openSheet;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5. ЭКРАН 2 — СПИСОК
+   ═══════════════════════════════════════════════════════════════ */
+let listItems = [], listEdit = false, canEdit = false, listTitle = '';
+
+function openList(title, items, editable){
+  listTitle = title; listItems = items; canEdit = editable; listEdit = false;
+  $('ltitle').textContent = title;
+  $('edit').hidden = !editable;
+  $('edit').textContent = 'Удалить';
+  $('edit').classList.remove('act');
+  show('list');
+  history.pushState({list:1}, '');
+  drawList();
+  ev('open-list', {list:title});
+}
+
+function drawList(){
+  freeUrls();
+  const g = $('grid'); g.innerHTML = '';
+
+  if(!listItems.length){
+    g.innerHTML = `<p class="empty"><b>Пока пусто</b>${
+      canEdit ? 'Нажми ＋ вверху и выбери картинки из галереи —<br>они останутся в приложении.'
+      : listTitle === 'Избранное' ? 'Отмечай эскизы звездой — они соберутся здесь.'
+      : 'Отмечай готовые работы галочкой — они соберутся здесь.'}</p>`;
+    return;
+  }
+
+  listItems.forEach((it, i) => {
+    const c = document.createElement('div');
+    c.className = 'card' + (it.done ? ' done' : '');
+    c.innerHTML =
+      `<img src="${esc(thumbSrc(it))}" alt="" loading="lazy"
+            onerror="this.closest('.card').classList.add('miss')">
+       ${listEdit ? '<button class="badge x" aria-label="Удалить">✕</button>' : ''}
+       <button class="badge d${it.done?' on':''}" aria-label="Отметить готовым">✓</button>
+       <button class="badge f${it.fav ?' on':''}" aria-label="В избранное">★</button>
+       ${it.name ? `<div class="name">${esc(it.name)}</div>` : ''}`;
+
+    c.querySelector('.f').onclick = async e => {
+      e.stopPropagation(); await toggleFlag(it, 'fav'); drawList();
+    };
+    c.querySelector('.d').onclick = async e => {
+      e.stopPropagation(); await toggleFlag(it, 'done'); drawList();
+    };
+    if(listEdit) c.querySelector('.x').onclick = e => { e.stopPropagation(); remove(it); };
+    else c.onclick = () => openDraw(it);
+
+    g.appendChild(c);
+  });
+}
+
+async function remove(it){
+  if(it.builtin) return toast('Встроенные эскизы удалить нельзя');
+  if(!confirm(`Удалить «${it.name}»?`)) return;
+  await delSk(it.id);
+  mine = mine.filter(m => m.id !== it.id);
+  listItems = listItems.filter(x => x.id !== it.id);
+  drawList();
+  toast('Удалено');
+}
+
+$('lback').onclick = () => history.state?.list ? history.back() : closeList();
+function closeList(){ show('lib'); shelves(); }
+
+$('edit').onclick = () => {
+  listEdit = !listEdit;
+  $('edit').textContent = listEdit ? 'Готово' : 'Удалить';
+  $('edit').classList.toggle('act', listEdit);
+  drawList();
+};
+
+/* ── загрузка своих ── */
+$('add').onclick = () => $('file').click();
+$('file').onchange = async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if(!files.length) return;
+  let n = 0;
+  for(const f of files){
+    if(!f.type.startsWith('image/')) continue;
+    try{
+      const rec = {
+        id: crypto.randomUUID(),
+        name: f.name.replace(/\.[^.]+$/, '').slice(0, 40),
+        blob: f, thumb: await makeThumb(f),
+        added: Date.now(), fav:false, done:false
+      };
+      await putSk(rec);
+      n++;
+    }catch(err){ toast('Не удалось загрузить: ' + f.name); }
+  }
+  mine = (await allSk()).sort((a,b) => b.added - a.added);
+  if($('list').classList.contains('on') && canEdit){ listItems = mineList(); drawList(); }
+  else shelves();
+  if(n){ toast(n === 1 ? 'Эскиз добавлен' : `Добавлено: ${n}`); ev('upload', {count:n}); }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   6. ШТОРКА ПАКА
+   ═══════════════════════════════════════════════════════════════ */
+function openSheet(){
+  $('sh-t').textContent = PACK.title;
+  $('sh-p').textContent = PACK.note;
+  $('sh-strip').innerHTML = PACK.items.map(p =>
+    `<img src="img/${esc(p.file)}" alt="" loading="lazy">`).join('');
+  $('buy').textContent = `Купить за ${PACK.price}`;
+  $('veil').classList.add('on');
+  $('sheet').classList.add('on');
+  ev('pack-open', {pack:PACK.id});
+}
+function closeSheet(){
+  $('veil').classList.remove('on');
+  $('sheet').classList.remove('on');
+}
+$('veil').onclick = closeSheet;
+$('buy').onclick = () => {
+  ev('pay-click', {pack:PACK.id, price:PACK.price});
+  if(PACK.payUrl){ window.open(PACK.payUrl, '_blank', 'noopener'); return; }
+  toast('Оплата ещё не открыта. Пак появится в ближайшее время.');
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   7. ЭКРАН 3 — ОБВОДКА
+   ═══════════════════════════════════════════════════════════════ */
+const cam = $('cam'), art = $('art'), grab = $('grab'), bar = $('bar');
+let track = null, current = null, camOn = false, artUrl = null, drawFrom = 'lib';
+
+/* Камера — главный источник нагрева на этом экране.
+   640×480 и 15 кадров: для обводки чёткость и плавность не нужны,
+   а греется телефон заметно меньше. Сама обводка не грузит —
+   картинка двигается через transform на видеокарте.            */
+async function startCam(){
+  if(camOn) return;
+  try{
+    const s = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:{ideal:'environment'},
+              width:{ideal:640}, height:{ideal:480},
+              frameRate:{ideal:15, max:20} },
+      audio:false
+    });
+    cam.srcObject = s;
+    track = s.getVideoTracks()[0];
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    $('torch').disabled = !caps.torch;
+    $('paper').classList.remove('on');
+    camOn = true;
+  }catch(e){
+    $('paper').classList.add('on');
+    toast(e.name === 'NotAllowedError'
+      ? 'Камера запрещена. Разреши её для сайта в настройках Chrome.'
+      : 'Камера недоступна: ' + e.name);
+  }
+}
+
+function stopCam(){
+  if(cam.srcObject){
+    cam.srcObject.getTracks().forEach(t => t.stop());
+    cam.srcObject = null;
+  }
+  track = null; camOn = false;
+  $('torch').classList.remove('on');
+}
+
+let wake = null;
+const keepAwake = async () => { try{ wake = await navigator.wakeLock.request('screen'); }catch(e){} };
+const dropWake  = () => { if(wake){ wake.release().catch(()=>{}); wake = null; } };
+
+document.addEventListener('visibilitychange', () => {
+  const onDraw = $('draw').classList.contains('on');
+  if(document.visibilityState === 'visible'){
+    if(onDraw){ keepAwake(); startCam(); }
+  }else{
+    stopCam(); dropWake();
+  }
+});
+
+function show(id){
+  ['lib','list','draw'].forEach(s => $(s).classList.toggle('on', s === id));
+}
+
+async function openDraw(it){
+  current = it;
+  drawFrom = $('list').classList.contains('on') ? 'list' : 'lib';
+  if(artUrl){ URL.revokeObjectURL(artUrl); artUrl = null; }
+
+  if(it.builtin){
+    art.src = it.src;
+  }else{
+    const rec = mine.find(m => m.id === it.id);
+    if(!rec) return toast('Эскиз не найден');
+    artUrl = URL.createObjectURL(rec.blob);
+    art.src = artUrl;
+  }
+
+  T.x = T.y = T.r = 0; T.s = 1; render();
+  art.classList.remove('lines','inv');
+  $('lines').classList.remove('on'); $('inv').classList.remove('on');
+  $('fav2').classList.toggle('on', !!it.fav);
+  show('draw');
+  history.pushState({draw:1}, '');
+  keepAwake();
+  startCam();
+  ev('trace-start', {sketch:it.id, kind: it.builtin ? 'library' : 'own'});
+}
+
+function closeDraw(){
+  stopCam(); dropWake();
+  if(drawFrom === 'list'){ show('list'); drawList(); }
+  else { show('lib'); shelves(); }
+}
+$('back').onclick = () => history.state?.draw ? history.back() : closeDraw();
+
+addEventListener('popstate', () => {
+  if($('sheet').classList.contains('on')) return closeSheet();
+  if($('draw').classList.contains('on')) return closeDraw();
+  if($('list').classList.contains('on')) closeList();
+});
+
+/* ── жесты: перемещение, масштаб, поворот ── */
+const T = {x:0, y:0, s:1, r:0};
+const pts = new Map();
+let base = null, locked = false;
+const render = () => art.style.transform =
+  `translate(${T.x}px,${T.y}px) rotate(${T.r}rad) scale(${T.s})`;
+
+function shape(){
+  const a = [...pts.values()];
+  if(!a.length) return null;
+  if(a.length === 1) return {cx:a[0].x, cy:a[0].y, d:null, ang:null};
+  const [p,q] = a;
+  return {cx:(p.x+q.x)/2, cy:(p.y+q.y)/2,
+          d:Math.hypot(q.x-p.x, q.y-p.y), ang:Math.atan2(q.y-p.y, q.x-p.x)};
+}
+const rebase = () => { const s = shape(); base = s ? {s, T:{...T}} : null; };
+
+grab.addEventListener('pointerdown', e => {
+  grab.setPointerCapture(e.pointerId);
+  pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); rebase();
+});
+grab.addEventListener('pointermove', e => {
+  if(!pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  const s = shape(); if(!base || !s) return;
+  if(s.d != null && base.s.d){
+    T.s = Math.min(24, Math.max(.04, base.T.s * (s.d / base.s.d)));
+    T.r = base.T.r + (s.ang - base.s.ang);
+  }
+  T.x = base.T.x + (s.cx - base.s.cx);
+  T.y = base.T.y + (s.cy - base.s.cy);
+  render();
+});
+const drop = e => { pts.delete(e.pointerId); rebase(); };
+grab.addEventListener('pointerup', drop);
+grab.addEventListener('pointercancel', drop);
+
+/* ── кнопки панели ── */
+$('op').oninput = e => {
+  art.style.opacity = e.target.value / 100;
+  $('opv').textContent = e.target.value + '%';
+};
+
+$('lock').onclick = e => {
+  locked = !locked;
+  grab.classList.toggle('locked', locked);
+  e.target.classList.toggle('on', locked);
+  e.target.textContent = locked ? 'Разблокировать' : 'Зафиксировать';
+  $('pin').classList.toggle('on', locked);
+};
+
+$('torch').onclick = async e => {
+  const on = !e.target.classList.contains('on');
+  try{
+    await track.applyConstraints({advanced:[{torch:on}]});
+    e.target.classList.toggle('on', on);
+  }catch(err){
+    e.target.disabled = true;
+    toast('Фонарик недоступен на этом телефоне');
+  }
+};
+
+$('lines').onclick = e => {
+  art.classList.remove('inv'); $('inv').classList.remove('on');
+  art.classList.toggle('lines');
+  e.target.classList.toggle('on', art.classList.contains('lines'));
+};
+$('inv').onclick = e => {
+  art.classList.remove('lines'); $('lines').classList.remove('on');
+  art.classList.toggle('inv');
+  e.target.classList.toggle('on', art.classList.contains('inv'));
+};
+$('fit').onclick = () => { T.x = T.y = T.r = 0; T.s = 1; render(); };
+
+$('fav2').onclick = async e => {
+  if(!current) return;
+  await toggleFlag(current, 'fav');
+  e.target.classList.toggle('on', current.fav);
+  toast(current.fav ? 'В избранном' : 'Убрано из избранного');
+};
+
+const panel = v => { bar.classList.toggle('hid', !v); $('tab').classList.toggle('on', !v); };
+$('hide').onclick = () => panel(false);
+$('tab').onclick  = () => panel(true);
+
+/* ═══════════════════════════════════════════════════════════════
+   8. СТАРТ
+   ═══════════════════════════════════════════════════════════════ */
+(async () => {
+  db = await openDB();
+  flags = (await getM('flags')) || {};
+  mine  = (await allSk()).sort((a,b) => b.added - a.added);
+  shelves();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
