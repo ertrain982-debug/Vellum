@@ -95,10 +95,13 @@
   .tile.new .em{color:var(--hot)}
 
 /* платный пак */
-  .card.lock img{filter:blur(7px) saturate(.55) brightness(.62);transform:scale(1.14)}
-  .card.lock::before{content:'';position:absolute;inset:0;background:rgba(14,14,16,.3);z-index:1}
+  .card.lock.blur img{filter:blur(7px) saturate(.55) brightness(.62);transform:scale(1.14)}
+  .card.lock::before{content:'';position:absolute;inset:0;background:rgba(14,14,16,.28);z-index:1}
   .card.lock .keyhole{position:absolute;inset:0;display:grid;place-items:center;
     font-size:21px;z-index:2;color:rgba(236,234,230,.9)}
+  .card .tag{position:absolute;left:7px;bottom:7px;z-index:3;
+    background:var(--hot);color:#17150F;font-size:10px;font-weight:650;
+    padding:3px 7px;border-radius:99px;letter-spacing:.01em}
   .shelf.paid .shelf-top h3::after{content:' 🔒';font-size:12px}
   .pricetag{font-size:12px;font-weight:650;color:var(--hot);
     border:1px solid rgba(232,184,75,.4);border-radius:99px;padding:3px 9px}
@@ -139,7 +142,8 @@
     scrollbar-width:none}
   #sheet .strip::-webkit-scrollbar{display:none}
   #sheet .strip img{width:74px;height:98px;flex:none;border-radius:10px;object-fit:cover;
-    background:var(--sunk);filter:blur(5px) brightness(.68) saturate(.5)}
+    background:#fff}
+  #sheet .strip img.blur{filter:blur(5px) brightness(.68) saturate(.5)}
   #buy{width:100%;min-height:var(--tap);border-radius:13px;background:var(--hot);
     color:#17150F;font-size:15px;font-weight:650;display:grid;place-items:center}
   #buy:active{transform:scale(.985)}
@@ -154,7 +158,8 @@
   #paper.on{display:grid}
 
   #stage{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;overflow:hidden}
-  #art{max-width:100vw;max-height:100vh;transform-origin:center;will-change:transform;opacity:.5}
+  #art{max-width:100vw;max-height:100vh;transform-origin:center;will-change:transform;
+    opacity:.5;background:#fff}
   #art.lines{filter:grayscale(1) contrast(2.4) brightness(1.08)}
   #art.inv{filter:invert(1) grayscale(1) contrast(2.4)}
 
@@ -259,7 +264,7 @@
   <p id="sh-p"></p>
   <div class="strip" id="sh-strip"></div>
   <button id="buy"></button>
-  <p class="fine">Разовая покупка. Пак останется на этом устройстве.</p>
+  <p class="fine">Один эскиз из пака открыт — попробуй, прежде чем покупать.</p>
 </div>
 
 <div id="toast"></div>
@@ -275,50 +280,55 @@
 
 const CATALOG = [
   { id:'portraits', title:'Портреты', items:[
-    {id:'po1', name:'Анфас',        file:'portrait-01.jpg'},
-    {id:'po2', name:'Профиль',      file:'portrait-02.jpg'},
-    {id:'po3', name:'Три четверти', file:'portrait-03.jpg'},
-    {id:'po4', name:'Глаза',        file:'portrait-04.jpg'},
-    {id:'po5', name:'Губы и нос',   file:'portrait-05.jpg'},
+    {id:'po1', name:'Портрет 1', file:'portret-1.jpg'},
+    {id:'po2', name:'Портрет 2', file:'portret-2.png'},
+    {id:'po3', name:'Портрет 3', file:'portret-3.png'},
+    {id:'po4', name:'Портрет 4', file:'portret-4.png'},
+    {id:'po5', name:'Портрет 5', file:'portret-5.png'},
   ]},
   { id:'animals', title:'Животные', items:[
-    {id:'an1', name:'Кот',           file:'animal-01.jpg'},
-    {id:'an2', name:'Котёнок',       file:'animal-02.jpg'},
-    {id:'an3', name:'Пёс',           file:'animal-03.jpg'},
-    {id:'an4', name:'Щенок',         file:'animal-04.jpg'},
-    {id:'an5', name:'Птица',         file:'animal-05.jpg'},
+    {id:'an1', name:'Животное 1', file:'animal_1.png'},
+    {id:'an2', name:'Животное 2', file:'animal-2.jpg'},
+    {id:'an3', name:'Животное 3', file:'animal-3.png'},
+    {id:'an4', name:'Животное 4', file:'animal-4.png'},
+    {id:'an5', name:'Животное 5', file:'animal-5.png'},
   ]},
   { id:'anime', title:'Аниме-стиль', items:[
-    {id:'am1', name:'Лицо',      file:'anime-01.jpg'},
-    {id:'am2', name:'Причёска',  file:'anime-02.jpg'},
-    {id:'am3', name:'Глаза',     file:'anime-03.jpg'},
-    {id:'am4', name:'Портрет',   file:'anime-04.jpg'},
-    {id:'am5', name:'В полроста',file:'anime-05.jpg'},
+    {id:'am1', name:'Аниме 1', file:'anime-1.jpg'},
+    {id:'am2', name:'Аниме 2', file:'anime-2.png'},
+    {id:'am3', name:'Аниме 3', file:'anime-3.png'},
+    {id:'am4', name:'Аниме 4', file:'anime-4.png'},
+    {id:'am5', name:'Аниме 5', file:'anime-5.png'},
   ]},
   { id:'simple', title:'Простое и весёлое', items:[
-    {id:'si1', name:'Роза',      file:'simple-01.jpg'},
-    {id:'si2', name:'Череп',     file:'simple-02.jpg'},
-    {id:'si3', name:'Бабочка',   file:'simple-03.jpg'},
-    {id:'si4', name:'Леттеринг', file:'simple-04.jpg'},
-    {id:'si5', name:'Луна',      file:'simple-05.jpg'},
+    {id:'si1', name:'Простое 1', file:'prostoe.png'},
+    {id:'si2', name:'Простое 2', file:'prostoe-2.png'},
+    {id:'si3', name:'Простое 3', file:'prostoe-3.png'},
+    {id:'si4', name:'Простое 4', file:'prostoe-4.png'},
+    {id:'si5', name:'Простое 5', file:'prostoe-5.png'},
   ]},
 ];
 
 /* Платный пак. payUrl — ссылка на оплату (lava.top и т.п.).
-   Пока пусто — кнопка честно скажет, что оплата ещё не открыта. */
+   Пока пусто — кнопка честно скажет, что оплата ещё не открыта.
+
+   state у каждого превью:
+     'free'    — открыт, можно обводить прямо сейчас (образец)
+     'preview' — виден чётко, но под замком
+     'locked'  — размыт                                            */
 const PACK = {
   id:'pack01',
-  title:'Портреты: расширенный пак',
-  note:'20 эскизов в одном стиле — лица, ракурсы, руки. Рисуются от простого к сложному.',
+  title:'Анатомия',
+  note:'20 эскизов фигуры в одном стиле — пропорции, позы, движение. От простой стойки к сложному ракурсу.',
   price:'$2',
   payUrl:'',
   items:[
-    {id:'pk1', name:'', file:'pack-01.jpg'},
-    {id:'pk2', name:'', file:'pack-02.jpg'},
-    {id:'pk3', name:'', file:'pack-03.jpg'},
-    {id:'pk4', name:'', file:'pack-04.jpg'},
-    {id:'pk5', name:'', file:'pack-05.jpg'},
-    {id:'pk6', name:'', file:'pack-06.jpg'},
+    {id:'pk1', name:'',          file:'pack-1.png', state:'locked'},
+    {id:'pk2', name:'Образец',   file:'pack-2.png', state:'free'},
+    {id:'pk3', name:'',          file:'pack-3.png', state:'preview'},
+    {id:'pk4', name:'',          file:'pack-4.png', state:'preview'},
+    {id:'pk5', name:'',          file:'pack-5.png', state:'locked'},
+    {id:'pk6', name:'',          file:'pack-6.png', state:'locked'},
   ],
 };
 
@@ -488,15 +498,40 @@ function shelves(){
   }
 
   /* ── платный пак ── */
-  const locked = PACK.items.map(p =>
-    `<span class="card lock">
-       <img src="img/${esc(p.file)}" alt="" loading="lazy"
-            onerror="this.closest('.card').classList.add('miss')">
-       <span class="keyhole">🔒</span>
-     </span>`).join('');
+  const packCards = PACK.items.map(p => {
+    if(p.state === 'free'){
+      const it = packFree();
+      return `<button class="card${it.fav?' fav':''}${it.done?' done':''}" data-free="1">
+          <img src="${esc(it.src)}" alt="" loading="lazy"
+               onerror="this.closest('.card').classList.add('miss')">
+          <span class="flag f">★</span><span class="flag d">✓</span>
+          <span class="tag">Бесплатно</span>
+        </button>`;
+    }
+    const blur = p.state === 'locked' ? ' blur' : '';
+    return `<span class="card lock${blur}">
+        <img src="img/${esc(p.file)}" alt="" loading="lazy"
+             onerror="this.closest('.card').classList.add('miss')">
+        <span class="keyhole">🔒</span>
+      </span>`;
+  }).join('');
+
   const paid = shelf(esc(PACK.title),
-      `<span class="pricetag">${esc(PACK.price)}</span>`, locked, 'paid');
-  paid.onclick = openSheet;
+      `<span class="pricetag">${esc(PACK.price)}</span>`, packCards, 'paid');
+
+  paid.onclick = e => {
+    if(e.target.closest('[data-free]')) return openDraw(packFree());
+    openSheet();
+  };
+}
+
+/* Открытый образец из пака — обычный эскиз, флаги работают как у всех */
+function packFree(){
+  const p = PACK.items.find(i => i.state === 'free');
+  if(!p) return null;
+  const f = flags[p.id] || {};
+  return {id:p.id, name:p.name || 'Образец', builtin:true,
+          src:'img/' + p.file, fav:!!f.fav, done:!!f.done};
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -605,7 +640,8 @@ function openSheet(){
   $('sh-t').textContent = PACK.title;
   $('sh-p').textContent = PACK.note;
   $('sh-strip').innerHTML = PACK.items.map(p =>
-    `<img src="img/${esc(p.file)}" alt="" loading="lazy">`).join('');
+    `<img class="${p.state === 'locked' ? 'blur' : ''}" src="img/${esc(p.file)}"
+          alt="" loading="lazy">`).join('');
   $('buy').textContent = `Купить за ${PACK.price}`;
   $('veil').classList.add('on');
   $('sheet').classList.add('on');
