@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0E0E10">
-<meta name="description" content="Обводка рисунков через камеру телефона.">
+<meta name="description" content="Line art references for tracing. Эскизы для обводки через камеру телефона.">
+<meta name="p:domain_verify" content="0643227b0f9cd93004014c4d1b75ec0f"/>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <title>Vellum</title>
@@ -39,6 +40,7 @@
     display:grid;place-items:center;font-size:19px;flex:none}
   .ico:active{background:var(--line)}
   .ico.wide{width:auto;padding:0 14px;font-size:13px;font-weight:600}
+  .ico.lng{font-size:12px;font-weight:700;letter-spacing:.03em;color:var(--dim)}
   .ico.act{background:var(--hot);color:#17150F}
 
 /* ============ ЭКРАН 1: ПОЛКИ ============ */
@@ -243,8 +245,9 @@
 <section id="lib" class="screen on">
   <div class="head">
     <h1>Vellum</h1>
-    <button class="ico" id="tips" aria-label="Почему телефон греется">?</button>
-    <button class="ico" id="add" aria-label="Добавить свой эскиз">＋</button>
+    <button class="ico lng" id="lang">EN</button>
+    <button class="ico" id="tips" data-i18n-aria="aTips">?</button>
+    <button class="ico" id="add" data-i18n-aria="aAdd">＋</button>
   </div>
   <div id="shelves"></div>
 </section>
@@ -252,9 +255,9 @@
 <!-- ЭКРАН 2: список -->
 <section id="list" class="screen">
   <div class="head">
-    <button class="ico" id="lback" aria-label="Назад">‹</button>
+    <button class="ico" id="lback" data-i18n-aria="aBack">‹</button>
     <h2 id="ltitle"></h2>
-    <button class="ico wide" id="edit" hidden>Удалить</button>
+    <button class="ico wide" id="edit" hidden></button>
   </div>
   <div id="grid"></div>
 </section>
@@ -262,29 +265,29 @@
 <!-- ЭКРАН 3: обводка -->
 <section id="draw" class="screen">
   <video id="cam" playsinline muted autoplay></video>
-  <div id="paper"><span>камера недоступна</span></div>
+  <div id="paper"><span data-i18n="noCam"></span></div>
   <div id="stage"><img id="art" alt=""></div>
   <div id="grab"></div>
-  <button id="back" aria-label="Назад в библиотеку">‹</button>
-  <div id="pin">Зафиксировано</div>
+  <button id="back" data-i18n-aria="aBackLib">‹</button>
+  <div id="pin" data-i18n="pinned"></div>
   <div id="bar">
     <div class="row">
-      <input id="op" type="range" min="5" max="100" value="50" aria-label="Прозрачность">
+      <input id="op" type="range" min="5" max="100" value="50" data-i18n-aria="aOpacity">
       <span class="val" id="opv">50%</span>
     </div>
     <div class="row">
-      <button id="lock">Зафиксировать</button>
-      <button id="torch" disabled>Фонарик</button>
-      <button id="fit">Сброс</button>
+      <button id="lock"></button>
+      <button id="torch" data-i18n="torch" disabled></button>
+      <button id="fit" data-i18n="reset"></button>
     </div>
     <div class="row">
-      <button id="lines">Линии</button>
-      <button id="inv">Инверсия</button>
-      <button id="fav2">★ В избранное</button>
-      <button id="hide">Скрыть</button>
+      <button id="lines" data-i18n="lines"></button>
+      <button id="inv" data-i18n="invert"></button>
+      <button id="fav2" data-i18n="fav2"></button>
+      <button id="hide" data-i18n="hide"></button>
     </div>
   </div>
-  <button id="tab">Панель</button>
+  <button id="tab" data-i18n="panel"></button>
 </section>
 
 <!-- шторка платного пака -->
@@ -295,38 +298,36 @@
   <p id="sh-p"></p>
   <div class="strip" id="sh-strip"></div>
   <button id="buy"></button>
-  <p class="fine">Один эскиз из пака открыт — попробуй, прежде чем покупать.</p>
+  <p class="fine" data-i18n="packFine"></p>
 </div>
 
 <!-- как установить, если браузер не умеет сам -->
 <div id="howto" role="dialog" aria-modal="true" aria-labelledby="ht-t">
   <div class="pull"></div>
-  <h3 id="ht-t">Установить на главный экран</h3>
+  <h3 id="ht-t"></h3>
   <p id="ht-p"></p>
-  <p class="fine">Приложение откроется на весь экран и будет работать без интернета.</p>
+  <p class="fine" data-i18n="installFine"></p>
 </div>
 
 <!-- почему греется телефон -->
 <div id="heat" role="dialog" aria-modal="true" aria-labelledby="he-t">
   <div class="pull"></div>
-  <h3 id="he-t">Телефон греется — это нормально</h3>
-  <p>Греет не приложение, а камера и экран: они работают всё время, пока ты
-     рисуешь. Так устроен любой телефон, дело не в поломке.</p>
+  <h3 id="he-t" data-i18n="heatT"></h3>
+  <p data-i18n="heatP"></p>
   <ul>
-    <li><b>Сними чехол.</b> Он держит тепло внутри — это помогает сильнее всего.</li>
-    <li><b>Убавь яркость</b> до комфортного минимума. Эскиз всё равно видно.</li>
-    <li><b>Не заряжай во время рисования.</b> Зарядка греет сама, вдвоём получается горячо.</li>
-    <li><b>Делай перерывы.</b> Выйди из обводки на пару минут — телефон остынет, эскиз никуда не денется.</li>
-    <li><b>Клади на твёрдое.</b> На одеяле или подушке тепло некуда уходить.</li>
+    <li data-i18n="heat1"></li>
+    <li data-i18n="heat2"></li>
+    <li data-i18n="heat3"></li>
+    <li data-i18n="heat4"></li>
+    <li data-i18n="heat5"></li>
   </ul>
-  <p class="fine">Держать телефон в руках у лица не обязательно — удобнее закрепить
-     его над листом и рисовать, поглядывая на экран.</p>
+  <p class="fine" data-i18n="heatFine"></p>
 </div>
 
 <!-- новая версия скачалась и ждёт перезагрузки -->
 <div id="upd">
-  <span>Обновление готово</span>
-  <button id="updgo">Обновить</button>
+  <span data-i18n="updReady"></span>
+  <button id="updgo" data-i18n="updGo"></button>
 </div>
 
 <div id="toast"></div>
@@ -340,34 +341,35 @@
    Имя файла в поле file. Если файла нет — карточка покажет
    заглушку с буквой V, приложение не сломается.               */
 
+/* Названия — парой {ru, en}. Приложение подставит нужное само. */
 const CATALOG = [
-  { id:'portraits', title:'Портреты', items:[
-    {id:'po1', name:'Портрет 1', file:'portret-1.jpg'},
-    {id:'po2', name:'Портрет 2', file:'portret-2.png'},
-    {id:'po3', name:'Портрет 3', file:'portret-3.png'},
-    {id:'po4', name:'Портрет 4', file:'portret-4.png'},
-    {id:'po5', name:'Портрет 5', file:'portret-5.png'},
+  { id:'portraits', title:{ru:'Портреты', en:'Portraits'}, items:[
+    {id:'po1', name:{ru:'Портрет 1', en:'Portrait 1'}, file:'portret-1.jpg'},
+    {id:'po2', name:{ru:'Портрет 2', en:'Portrait 2'}, file:'portret-2.png'},
+    {id:'po3', name:{ru:'Портрет 3', en:'Portrait 3'}, file:'portret-3.png'},
+    {id:'po4', name:{ru:'Портрет 4', en:'Portrait 4'}, file:'portret-4.png'},
+    {id:'po5', name:{ru:'Портрет 5', en:'Portrait 5'}, file:'portret-5.png'},
   ]},
-  { id:'animals', title:'Животные', items:[
-    {id:'an1', name:'Животное 1', file:'animal_1.png'},
-    {id:'an2', name:'Животное 2', file:'animal-2.jpg'},
-    {id:'an3', name:'Животное 3', file:'animal-3.png'},
-    {id:'an4', name:'Животное 4', file:'animal-4.png'},
-    {id:'an5', name:'Животное 5', file:'animal-5.png'},
+  { id:'animals', title:{ru:'Животные', en:'Animals'}, items:[
+    {id:'an1', name:{ru:'Животное 1', en:'Animal 1'}, file:'animal_1.png'},
+    {id:'an2', name:{ru:'Животное 2', en:'Animal 2'}, file:'animal-2.jpg'},
+    {id:'an3', name:{ru:'Животное 3', en:'Animal 3'}, file:'animal-3.png'},
+    {id:'an4', name:{ru:'Животное 4', en:'Animal 4'}, file:'animal-4.png'},
+    {id:'an5', name:{ru:'Животное 5', en:'Animal 5'}, file:'animal-5.png'},
   ]},
-  { id:'anime', title:'Аниме-стиль', items:[
-    {id:'am1', name:'Аниме 1', file:'anime-1.jpg'},
-    {id:'am2', name:'Аниме 2', file:'anime-2.png'},
-    {id:'am3', name:'Аниме 3', file:'anime-3.png'},
-    {id:'am4', name:'Аниме 4', file:'anime-4.png'},
-    {id:'am5', name:'Аниме 5', file:'anime-5.png'},
+  { id:'anime', title:{ru:'Аниме-стиль', en:'Anime style'}, items:[
+    {id:'am1', name:{ru:'Аниме 1', en:'Anime 1'}, file:'anime-1.jpg'},
+    {id:'am2', name:{ru:'Аниме 2', en:'Anime 2'}, file:'anime-2.png'},
+    {id:'am3', name:{ru:'Аниме 3', en:'Anime 3'}, file:'anime-3.png'},
+    {id:'am4', name:{ru:'Аниме 4', en:'Anime 4'}, file:'anime-4.png'},
+    {id:'am5', name:{ru:'Аниме 5', en:'Anime 5'}, file:'anime-5.png'},
   ]},
-  { id:'simple', title:'Простое и весёлое', items:[
-    {id:'si1', name:'Простое 1', file:'prostoe.png'},
-    {id:'si2', name:'Простое 2', file:'prostoe-2.png'},
-    {id:'si3', name:'Простое 3', file:'prostoe-3.png'},
-    {id:'si4', name:'Простое 4', file:'prostoe-4.png'},
-    {id:'si5', name:'Простое 5', file:'prostoe-5.png'},
+  { id:'simple', title:{ru:'Простое и весёлое', en:'Simple and fun'}, items:[
+    {id:'si1', name:{ru:'Простое 1', en:'Simple 1'}, file:'prostoe.png'},
+    {id:'si2', name:{ru:'Простое 2', en:'Simple 2'}, file:'prostoe-2.png'},
+    {id:'si3', name:{ru:'Простое 3', en:'Simple 3'}, file:'prostoe-3.png'},
+    {id:'si4', name:{ru:'Простое 4', en:'Simple 4'}, file:'prostoe-4.png'},
+    {id:'si5', name:{ru:'Простое 5', en:'Simple 5'}, file:'prostoe-5.png'},
   ]},
 ];
 
@@ -380,22 +382,184 @@ const CATALOG = [
      'locked'  — размыт                                            */
 const PACK = {
   id:'pack01',
-  title:'Анатомия',
-  note:'20 эскизов фигуры в одном стиле — пропорции, позы, движение. От простой стойки к сложному ракурсу.',
+  title:{ru:'Анатомия', en:'Anatomy'},
+  note:{
+    ru:'20 эскизов фигуры в одном стиле — пропорции, позы, движение. От простой стойки к сложному ракурсу.',
+    en:'20 figure sketches in one style — proportions, poses, movement. From a simple stance to a complex angle.'
+  },
   price:'$5',
   payUrl:'https://app.lava.top/products/0c356d2d-85f7-4693-8747-7b79fc7dde49',
   items:[
-    {id:'pk1', name:'',          file:'pack-1.png', state:'locked'},
-    {id:'pk2', name:'Образец',   file:'pack-2.png', state:'free'},
-    {id:'pk3', name:'',          file:'pack-3.png', state:'preview'},
-    {id:'pk4', name:'',          file:'pack-4.png', state:'preview'},
-    {id:'pk5', name:'',          file:'pack-5.png', state:'locked'},
-    {id:'pk6', name:'',          file:'pack-6.png', state:'locked'},
+    {id:'pk1', name:null, file:'pack-1.png', state:'locked'},
+    {id:'pk2', name:{ru:'Образец', en:'Sample'}, file:'pack-2.png', state:'free'},
+    {id:'pk3', name:null, file:'pack-3.png', state:'preview'},
+    {id:'pk4', name:null, file:'pack-4.png', state:'preview'},
+    {id:'pk5', name:null, file:'pack-5.png', state:'locked'},
+    {id:'pk6', name:null, file:'pack-6.png', state:'locked'},
   ],
 };
 
 /* ═══════════════════════════════════════════════════════════════
-   2. СЛУЖЕБНОЕ
+   2. ЯЗЫК
+   ═══════════════════════════════════════════════════════════════
+   Язык берётся из настроек телефона, дальше — из выбора человека.
+   Строки в HTML помечены data-i18n, остальные подставляются через t(). */
+
+const L = {
+  ru:{
+    my:'Мои коллекции',  fav:'Избранное',    done:'Готово',
+    mine:'Мои загрузки', addOwn:'Добавить своё', fromGallery:'из галереи',
+    install:'Установить', toHome:'на главный экран',
+    empty:'пусто',       sk:' эск.',          all:'все ›',
+    del:'Удалить',       ok:'Готово',
+
+    noneT:'Пока пусто',
+    noneMine:'Нажми ＋ вверху и выбери картинки из галереи —<br>они останутся в приложении.',
+    noneFav:'Отмечай эскизы звездой — они соберутся здесь.',
+    noneDone:'Отмечай готовые работы галочкой — они соберутся здесь.',
+    noBuiltinDel:'Встроенные эскизы удалить нельзя',
+    confirmDel:n => `Удалить «${n}»?`,
+    deleted:'Удалено',
+    added1:'Эскиз добавлен',
+    addedN:n => `Добавлено: ${n}`,
+    failed:n => 'Не удалось загрузить: ' + n,
+    notFound:'Эскиз не найден',
+
+    buy:p => `Купить за ${p}`,
+    payClosed:'Оплата ещё не открыта. Пак появится в ближайшее время.',
+    free:'Бесплатно',
+
+    installTitle:'Установить на главный экран',
+    installLater:'Можно установить позже — кнопка на месте',
+    installed:'Готово, приложение на главном экране',
+    inAppHint:(app) => `Ты открыл Vellum внутри ${app} — отсюда установить нельзя. `
+      + 'Нажми три точки в углу и выбери «Открыть в браузере», потом попробуй снова.',
+    iosHint:'Нажми «Поделиться» внизу браузера, пролистай список и выбери «На экран „Домой“».',
+    ffHint:'Открой меню браузера — три полоски справа — и выбери «Установить».',
+    genHint:'Открой меню браузера — три точки вверху — и выбери «Установить приложение» или «Добавить на главный экран».',
+
+    lock:'Зафиксировать', unlock:'Разблокировать',
+    inFav:'В избранном',  outFav:'Убрано из избранного',
+    noTorch:'Фонарик недоступен на этом телефоне',
+    camDenied:'Камера запрещена. Разреши её для сайта в настройках Chrome.',
+    camFail:e => 'Камера недоступна: ' + e,
+  },
+  en:{
+    my:'My collections', fav:'Favourites',   done:'Finished',
+    mine:'My uploads',   addOwn:'Add your own', fromGallery:'from gallery',
+    install:'Install',   toHome:'to home screen',
+    empty:'empty',       sk:' sketches',      all:'all ›',
+    del:'Delete',        ok:'Done',
+
+    noneT:'Nothing here yet',
+    noneMine:'Tap ＋ at the top and pick images from your gallery —<br>they stay in the app.',
+    noneFav:'Star a sketch and it shows up here.',
+    noneDone:'Tick a finished drawing and it shows up here.',
+    noBuiltinDel:'Built-in sketches can\u2019t be deleted',
+    confirmDel:n => `Delete “${n}”?`,
+    deleted:'Deleted',
+    added1:'Sketch added',
+    addedN:n => `Added: ${n}`,
+    failed:n => 'Could not load: ' + n,
+    notFound:'Sketch not found',
+
+    buy:p => `Buy for ${p}`,
+    payClosed:'Payment isn\u2019t open yet. The pack is coming soon.',
+    free:'Free',
+
+    installTitle:'Add to home screen',
+    installLater:'You can install later — the button stays',
+    installed:'Done, the app is on your home screen',
+    inAppHint:(app) => `You opened Vellum inside ${app} — installing from here won\u2019t work. `
+      + 'Tap the three dots in the corner, choose “Open in browser”, then try again.',
+    iosHint:'Tap Share at the bottom of the browser, scroll the list and pick “Add to Home Screen”.',
+    ffHint:'Open the browser menu — three lines on the right — and choose “Install”.',
+    genHint:'Open the browser menu — three dots at the top — and choose “Install app” or “Add to Home screen”.',
+
+    lock:'Lock',         unlock:'Unlock',
+    inFav:'Added to favourites', outFav:'Removed from favourites',
+    noTorch:'No flashlight on this phone',
+    camDenied:'Camera blocked. Allow it for this site in your browser settings.',
+    camFail:e => 'Camera unavailable: ' + e,
+  }
+};
+
+let lang = 'ru';
+const t = (k, ...a) => { const v = L[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+/* берёт нужную половину из пары {ru, en} */
+const tx = o => !o ? '' : (typeof o === 'string' ? o : (o[lang] || o.ru || ''));
+
+function detectLang(){
+  const n = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+  return /^(ru|uk|be|kk|ky|uz|tg|az|hy)/i.test(n) ? 'ru' : 'en';
+}
+
+async function setLang(next, save = true){
+  lang = next;
+  document.documentElement.lang = next;
+  $('lang').textContent = next === 'ru' ? 'EN' : 'RU';
+  $('lang').setAttribute('aria-label', next === 'ru' ? 'Switch to English' : 'Переключить на русский');
+
+  /* статичные надписи в разметке */
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.innerHTML = TXT[el.dataset.i18n][next];
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    el.setAttribute('aria-label', TXT[el.dataset.i18nAria][next]);
+  });
+
+  $('lock').textContent = locked ? t('unlock') : t('lock');
+  if(save) await setM('lang', next);
+}
+
+/* надписи, лежащие прямо в разметке */
+const TXT = {
+  torch:{ru:'Фонарик', en:'Flashlight'},
+  reset:{ru:'Сброс', en:'Reset'},
+  lines:{ru:'Линии', en:'Lines'},
+  invert:{ru:'Инверсия', en:'Invert'},
+  fav2:{ru:'★ В избранное', en:'★ Favourite'},
+  hide:{ru:'Скрыть', en:'Hide'},
+  panel:{ru:'Панель', en:'Panel'},
+  pinned:{ru:'Зафиксировано', en:'Locked'},
+  noCam:{ru:'камера недоступна', en:'camera unavailable'},
+
+  updReady:{ru:'Обновление готово', en:'Update ready'},
+  updGo:{ru:'Обновить', en:'Update'},
+
+  packFine:{ru:'Один эскиз из пака открыт — попробуй, прежде чем покупать.',
+            en:'One sketch from the pack is open — try it before you buy.'},
+  installFine:{ru:'Приложение откроется на весь экран и будет работать без интернета.',
+               en:'The app opens full screen and works without internet.'},
+
+  heatT:{ru:'Телефон греется — это нормально', en:'The phone gets warm — that\u2019s normal'},
+  heatP:{ru:'Греет не приложение, а камера и экран: они работают всё время, пока ты рисуешь. Так устроен любой телефон, дело не в поломке.',
+         en:'It\u2019s not the app — it\u2019s the camera and the screen, both running the whole time you draw. Every phone does this; nothing is broken.'},
+  heat1:{ru:'<b>Сними чехол.</b> Он держит тепло внутри — это помогает сильнее всего.',
+         en:'<b>Take the case off.</b> It traps the heat — this helps more than anything else.'},
+  heat2:{ru:'<b>Убавь яркость</b> до комфортного минимума. Эскиз всё равно видно.',
+         en:'<b>Turn the brightness down</b> as low as is comfortable. The sketch stays visible.'},
+  heat3:{ru:'<b>Не заряжай во время рисования.</b> Зарядка греет сама, вдвоём получается горячо.',
+         en:'<b>Don\u2019t charge while drawing.</b> Charging heats the phone too; together it gets hot.'},
+  heat4:{ru:'<b>Делай перерывы.</b> Выйди из обводки на пару минут — телефон остынет, эскиз никуда не денется.',
+         en:'<b>Take breaks.</b> Leave the tracing screen for a couple of minutes — the phone cools down, the sketch stays put.'},
+  heat5:{ru:'<b>Клади на твёрдое.</b> На одеяле или подушке тепло некуда уходить.',
+         en:'<b>Put it on something hard.</b> On a blanket or pillow the heat has nowhere to go.'},
+  heatFine:{ru:'Держать телефон в руках у лица не обязательно — удобнее закрепить его над листом и рисовать, поглядывая на экран.',
+            en:'You don\u2019t have to hold the phone up to your face — it\u2019s easier to prop it above the paper and glance at the screen.'},
+
+  aTips:{ru:'Почему телефон греется', en:'Why the phone gets warm'},
+  aAdd:{ru:'Добавить свой эскиз', en:'Add your own sketch'},
+  aBack:{ru:'Назад', en:'Back'},
+  aBackLib:{ru:'Назад в библиотеку', en:'Back to library'},
+  aOpacity:{ru:'Прозрачность', en:'Opacity'},
+  aDone:{ru:'Отметить готовым', en:'Mark as finished'},
+  aFav:{ru:'В избранное', en:'Add to favourites'},
+  aDel:{ru:'Удалить', en:'Delete'},
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   3. СЛУЖЕБНОЕ
    ═══════════════════════════════════════════════════════════════ */
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
@@ -446,7 +610,7 @@ function builtinList(catId){
   if(!cat) return [];
   return cat.items.map(s => {
     const f = flags[s.id] || {};
-    return {id:s.id, name:s.name, builtin:true, src:'img/' + s.file,
+    return {id:s.id, name:tx(s.name), builtin:true, src:'img/' + s.file,
             fav:!!f.fav, done:!!f.done};
   });
 }
@@ -533,17 +697,19 @@ function shelves(){
   const favs = everything().filter(i => i.fav);
   const dones = everything().filter(i => i.done);
 
-  const my = shelf('Мои коллекции', '',
-      tile('★', 'Избранное', favs.length ? favs.length + ' эск.' : 'пусто', 'fav', pics(favs)) +
-      tile('✓', 'Готово',    dones.length ? dones.length + ' эск.' : 'пусто', 'done', pics(dones)) +
-      tile('☰', 'Мои загрузки', mine.length ? mine.length + ' эск.' : 'пусто', 'mine', pics(mineList())) +
+  const cnt = n => n ? n + t('sk') : t('empty');
+
+  const my = shelf(t('my'), '',
+      tile('★', t('fav'),  cnt(favs.length),  'fav',  pics(favs)) +
+      tile('✓', t('done'), cnt(dones.length), 'done', pics(dones)) +
+      tile('☰', t('mine'), cnt(mine.length),  'mine', pics(mineList())) +
       `<button class="tile new" data-act="add">
-         <span class="em">＋</span><span class="t">Добавить своё</span>
-         <span class="s">из галереи</span>
+         <span class="em">＋</span><span class="t">${t('addOwn')}</span>
+         <span class="s">${t('fromGallery')}</span>
        </button>` +
       (canInstall() ? `<button class="tile get" data-act="install">
-         <span class="em">⤓</span><span class="t">Установить</span>
-         <span class="s">на главный экран</span>
+         <span class="em">⤓</span><span class="t">${t('install')}</span>
+         <span class="s">${t('toHome')}</span>
        </button>` : ''));
 
   my.querySelector('.rail').onclick = e => {
@@ -551,17 +717,17 @@ function shelves(){
     const a = b.dataset.act;
     if(a === 'add')     return $('file').click();
     if(a === 'install') return doInstall();
-    if(a === 'fav')     return openList('Избранное', everything().filter(i => i.fav), false);
-    if(a === 'done')    return openList('Готово',    everything().filter(i => i.done), false);
-    openList('Мои загрузки', mineList(), true);
+    if(a === 'fav')     return openList(t('fav'),  everything().filter(i => i.fav),  false, 'fav');
+    if(a === 'done')    return openList(t('done'), everything().filter(i => i.done), false, 'done');
+    openList(t('mine'), mineList(), true, 'mine');
   };
 
   /* ── категории библиотеки ── */
   for(const cat of CATALOG){
     const list = builtinList(cat.id);
-    const s = shelf(esc(cat.title), '<span class="all">все ›</span>',
+    const s = shelf(esc(tx(cat.title)), `<span class="all">${t('all')}</span>`,
                     list.map(cardHTML).join(''));
-    s.querySelector('.all').onclick = () => openList(cat.title, builtinList(cat.id), false);
+    s.querySelector('.all').onclick = () => openList(tx(cat.title), builtinList(cat.id), false, 'cat');
     s.querySelector('.rail').onclick = e => {
       const b = e.target.closest('.card'); if(!b) return;
       openDraw(builtinList(cat.id)[+b.dataset.i]);
@@ -576,7 +742,7 @@ function shelves(){
           <img src="${esc(it.src)}" alt="" loading="lazy"
                onerror="this.closest('.card').classList.add('miss')">
           <span class="flag f">★</span><span class="flag d">✓</span>
-          <span class="tag">Бесплатно</span>
+          <span class="tag">${t('free')}</span>
         </button>`;
     }
     const blur = p.state === 'locked' ? ' blur' : '';
@@ -587,7 +753,7 @@ function shelves(){
       </span>`;
   }).join('');
 
-  const paid = shelf(esc(PACK.title),
+  const paid = shelf(esc(tx(PACK.title)),
       `<span class="pricetag">${esc(PACK.price)}</span>`, packCards, 'paid');
 
   paid.onclick = e => {
@@ -601,25 +767,26 @@ function packFree(){
   const p = PACK.items.find(i => i.state === 'free');
   if(!p) return null;
   const f = flags[p.id] || {};
-  return {id:p.id, name:p.name || 'Образец', builtin:true,
+  return {id:p.id, name:tx(p.name), builtin:true,
           src:'img/' + p.file, fav:!!f.fav, done:!!f.done};
 }
 
 /* ═══════════════════════════════════════════════════════════════
    5. ЭКРАН 2 — СПИСОК
    ═══════════════════════════════════════════════════════════════ */
-let listItems = [], listEdit = false, canEdit = false, listTitle = '';
+let listItems = [], listEdit = false, canEdit = false, listTitle = '', listKind = '';
 
-function openList(title, items, editable){
+function openList(title, items, editable, kind){
   listTitle = title; listItems = items; canEdit = editable; listEdit = false;
+  listKind = kind || '';
   $('ltitle').textContent = title;
   $('edit').hidden = !editable;
-  $('edit').textContent = 'Удалить';
+  $('edit').textContent = t('del');
   $('edit').classList.remove('act');
   show('list');
   history.pushState({list:1}, '');
   drawList();
-  ev('open-list', {list:title});
+  ev('open-list', {list:kind || title});
 }
 
 function drawList(){
@@ -627,10 +794,10 @@ function drawList(){
   const g = $('grid'); g.innerHTML = '';
 
   if(!listItems.length){
-    g.innerHTML = `<p class="empty"><b>Пока пусто</b>${
-      canEdit ? 'Нажми ＋ вверху и выбери картинки из галереи —<br>они останутся в приложении.'
-      : listTitle === 'Избранное' ? 'Отмечай эскизы звездой — они соберутся здесь.'
-      : 'Отмечай готовые работы галочкой — они соберутся здесь.'}</p>`;
+    g.innerHTML = `<p class="empty"><b>${t('noneT')}</b>${
+      canEdit           ? t('noneMine')
+      : listKind === 'fav' ? t('noneFav')
+      :                     t('noneDone')}</p>`;
     return;
   }
 
@@ -640,9 +807,9 @@ function drawList(){
     c.innerHTML =
       `<img src="${esc(thumbSrc(it))}" alt="" loading="lazy"
             onerror="this.closest('.card').classList.add('miss')">
-       ${listEdit ? '<button class="badge x" aria-label="Удалить">✕</button>' : ''}
-       <button class="badge d${it.done?' on':''}" aria-label="Отметить готовым">✓</button>
-       <button class="badge f${it.fav ?' on':''}" aria-label="В избранное">★</button>
+       ${listEdit ? `<button class="badge x" aria-label="${TXT.aDel[lang]}">✕</button>` : ''}
+       <button class="badge d${it.done?' on':''}" aria-label="${TXT.aDone[lang]}">✓</button>
+       <button class="badge f${it.fav ?' on':''}" aria-label="${TXT.aFav[lang]}">★</button>
        ${it.name ? `<div class="name">${esc(it.name)}</div>` : ''}`;
 
     c.querySelector('.f').onclick = async e => {
@@ -659,13 +826,13 @@ function drawList(){
 }
 
 async function remove(it){
-  if(it.builtin) return toast('Встроенные эскизы удалить нельзя');
-  if(!confirm(`Удалить «${it.name}»?`)) return;
+  if(it.builtin) return toast(t('noBuiltinDel'));
+  if(!confirm(t('confirmDel', it.name))) return;
   await delSk(it.id);
   mine = mine.filter(m => m.id !== it.id);
   listItems = listItems.filter(x => x.id !== it.id);
   drawList();
-  toast('Удалено');
+  toast(t('deleted'));
 }
 
 $('lback').onclick = () => history.state?.list ? history.back() : closeList();
@@ -673,7 +840,7 @@ function closeList(){ show('lib'); shelves(); }
 
 $('edit').onclick = () => {
   listEdit = !listEdit;
-  $('edit').textContent = listEdit ? 'Готово' : 'Удалить';
+  $('edit').textContent = listEdit ? t('ok') : t('del');
   $('edit').classList.toggle('act', listEdit);
   drawList();
 };
@@ -696,12 +863,12 @@ $('file').onchange = async e => {
       };
       await putSk(rec);
       n++;
-    }catch(err){ toast('Не удалось загрузить: ' + f.name); }
+    }catch(err){ toast(t('failed', f.name)); }
   }
   mine = (await allSk()).sort((a,b) => b.added - a.added);
   if($('list').classList.contains('on') && canEdit){ listItems = mineList(); drawList(); }
   else shelves();
-  if(n){ toast(n === 1 ? 'Эскиз добавлен' : `Добавлено: ${n}`); ev('upload', {count:n}); }
+  if(n){ toast(n === 1 ? t('added1') : t('addedN', n)); ev('upload', {count:n}); }
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -727,7 +894,7 @@ addEventListener('beforeinstallprompt', e => {
 addEventListener('appinstalled', () => {
   deferred = null;
   ev('installed');
-  toast('Готово, приложение на главном экране');
+  toast(t('installed'));
   if($('lib').classList.contains('on')) shelves();
 });
 
@@ -743,16 +910,12 @@ function inApp(){
 
 function hint(){
   const app = inApp();
-  if(app)
-    return `Ты открыл Vellum внутри ${app} — отсюда установить нельзя. `
-         + 'Нажми три точки в углу и выбери «Открыть в браузере», потом попробуй снова.';
+  if(app) return t('inAppHint', app);
 
   const ua = navigator.userAgent;
-  if(/iPad|iPhone|iPod/.test(ua))
-    return 'Нажми «Поделиться» внизу браузера, пролистай список и выбери «На экран „Домой“».';
-  if(/Firefox/.test(ua))
-    return 'Открой меню браузера — три полоски справа — и выбери «Установить».';
-  return 'Открой меню браузера — три точки вверху — и выбери «Установить приложение» или «Добавить на главный экран».';
+  if(/iPad|iPhone|iPod/.test(ua)) return t('iosHint');
+  if(/Firefox/.test(ua))          return t('ffHint');
+  return t('genHint');
 }
 
 async function doInstall(){
@@ -761,9 +924,10 @@ async function doInstall(){
     deferred.prompt();
     const r = await deferred.userChoice.catch(() => null);
     deferred = null;
-    if(r && r.outcome !== 'accepted') toast('Можно установить позже — кнопка на месте');
+    if(r && r.outcome !== 'accepted') toast(t('installLater'));
     return;
   }
+  $('ht-t').textContent = t('installTitle');
   $('ht-p').textContent = hint();
   $('upd').classList.remove('on');
   $('veil').classList.add('on');
@@ -775,12 +939,12 @@ async function doInstall(){
    ═══════════════════════════════════════════════════════════════ */
 function openSheet(){
   $('upd').classList.remove('on');
-  $('sh-t').textContent = PACK.title;
-  $('sh-p').textContent = PACK.note;
+  $('sh-t').textContent = tx(PACK.title);
+  $('sh-p').textContent = tx(PACK.note);
   $('sh-strip').innerHTML = PACK.items.map(p =>
     `<img class="${p.state === 'locked' ? 'blur' : ''}" src="img/${esc(p.file)}"
           alt="" loading="lazy">`).join('');
-  $('buy').textContent = `Купить за ${PACK.price}`;
+  $('buy').textContent = t('buy', PACK.price);
   $('veil').classList.add('on');
   $('sheet').classList.add('on');
   ev('pack-open', {pack:PACK.id});
@@ -804,7 +968,7 @@ $('veil').onclick = closeSheet;
 $('buy').onclick = () => {
   ev('pay-click', {pack:PACK.id, price:PACK.price});
   if(PACK.payUrl){ window.open(PACK.payUrl, '_blank', 'noopener'); return; }
-  toast('Оплата ещё не открыта. Пак появится в ближайшее время.');
+  toast(t('payClosed'));
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -835,9 +999,7 @@ async function startCam(){
     camOn = true;
   }catch(e){
     $('paper').classList.add('on');
-    toast(e.name === 'NotAllowedError'
-      ? 'Камера запрещена. Разреши её для сайта в настройках Chrome.'
-      : 'Камера недоступна: ' + e.name);
+    toast(e.name === 'NotAllowedError' ? t('camDenied') : t('camFail', e.name));
   }
 }
 
@@ -879,7 +1041,7 @@ async function openDraw(it){
     art.src = it.src;
   }else{
     const rec = mine.find(m => m.id === it.id);
-    if(!rec) return toast('Эскиз не найден');
+    if(!rec) return toast(t('notFound'));
     artUrl = URL.createObjectURL(rec.blob);
     art.src = artUrl;
   }
@@ -958,7 +1120,7 @@ $('lock').onclick = e => {
   locked = !locked;
   grab.classList.toggle('locked', locked);
   e.target.classList.toggle('on', locked);
-  e.target.textContent = locked ? 'Разблокировать' : 'Зафиксировать';
+  e.target.textContent = locked ? t('unlock') : t('lock');
   $('pin').classList.toggle('on', locked);
 };
 
@@ -969,7 +1131,7 @@ $('torch').onclick = async e => {
     e.target.classList.toggle('on', on);
   }catch(err){
     e.target.disabled = true;
-    toast('Фонарик недоступен на этом телефоне');
+    toast(t('noTorch'));
   }
 };
 
@@ -989,7 +1151,7 @@ $('fav2').onclick = async e => {
   if(!current) return;
   await toggleFlag(current, 'fav');
   e.target.classList.toggle('on', current.fav);
-  toast(current.fav ? 'В избранном' : 'Убрано из избранного');
+  toast(current.fav ? t('inFav') : t('outFav'));
 };
 
 const panel = v => { bar.classList.toggle('hid', !v); $('tab').classList.toggle('on', !v); };
@@ -1042,10 +1204,20 @@ function watchSW(){
 /* ═══════════════════════════════════════════════════════════════
    10. СТАРТ
    ═══════════════════════════════════════════════════════════════ */
+$('lang').onclick = async () => {
+  const next = lang === 'ru' ? 'en' : 'ru';
+  await setLang(next);
+  ev('lang-switch', {to:next});
+  /* перерисовываем то, что открыто сейчас */
+  if($('list').classList.contains('on')) closeList();
+  else shelves();
+};
+
 (async () => {
   db = await openDB();
   flags = (await getM('flags')) || {};
   mine  = (await allSk()).sort((a,b) => b.added - a.added);
+  await setLang((await getM('lang')) || detectLang(), false);
   shelves();
   watchSW();
 })();
