@@ -9,7 +9,7 @@
 
    ВАЖНО: правишь index.html или добавляешь картинки — подними
    номер версии ниже. Иначе телефон отдаст старую копию из кэша. */
-const V = 'vellum-v4';
+const V = 'vellum-v5';
 
 const SHELL = [
   './',
@@ -21,11 +21,14 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(V)
-      .then(c => c.addAll(SHELL))
-      .then(() => self.skipWaiting())
-  );
+  e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)));
+});
+
+/* Новая версия ждёт, пока страница не разрешит — тогда показывается
+   полоска «Обновление готово». Если человек её не нажмёт, версия
+   встанет сама при следующем запуске. */
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {

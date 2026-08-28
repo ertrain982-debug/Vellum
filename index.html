@@ -208,6 +208,18 @@
     backdrop-filter:blur(14px);font-size:12px;z-index:5}
   #tab.on{display:grid}
 
+  #upd{position:fixed;left:12px;right:12px;bottom:calc(12px + var(--bot));z-index:70;
+    background:rgba(26,26,29,.96);border:1px solid var(--line);border-radius:13px;
+    padding:11px 12px 11px 15px;display:none;align-items:center;gap:12px;
+    font-size:13px;backdrop-filter:blur(14px);
+    box-shadow:0 8px 26px rgba(0,0,0,.42);
+    animation:rise .32s cubic-bezier(.22,.8,.3,1) both}
+  #upd.on{display:flex}
+  #upd span{flex:1;color:var(--dim)}
+  #upd button{background:var(--hot);color:#17150F;font-weight:650;font-size:13px;
+    padding:8px 15px;border-radius:9px}
+  #upd button:active{transform:scale(.96)}
+
   #toast{position:fixed;left:50%;bottom:calc(96px + var(--bot));transform:translate(-50%,14px);
     background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:13px;
     opacity:0;pointer-events:none;transition:.25s;max-width:84vw;text-align:center;z-index:90}
@@ -284,6 +296,12 @@
   <h3 id="ht-t">Установить на главный экран</h3>
   <p id="ht-p"></p>
   <p class="fine">Приложение откроется на весь экран и будет работать без интернета.</p>
+</div>
+
+<!-- новая версия скачалась и ждёт перезагрузки -->
+<div id="upd">
+  <span>Обновление готово</span>
+  <button id="updgo">Обновить</button>
 </div>
 
 <div id="toast"></div>
@@ -688,7 +706,22 @@ addEventListener('appinstalled', () => {
   if($('lib').classList.contains('on')) shelves();
 });
 
+/* Встроенные браузеры Instagram и TikTok установку не умеют вообще —
+   там нужен выход в обычный браузер, иначе кнопка бесполезна. */
+function inApp(){
+  const ua = navigator.userAgent;
+  if(/Instagram/i.test(ua))                            return 'Instagram';
+  if(/BytedanceWebview|TikTok|musical_ly/i.test(ua))   return 'TikTok';
+  if(/FBAN|FBAV|FB_IAB/i.test(ua))                     return 'Facebook';
+  return null;
+}
+
 function hint(){
+  const app = inApp();
+  if(app)
+    return `Ты открыл Vellum внутри ${app} — отсюда установить нельзя. `
+         + 'Нажми три точки в углу и выбери «Открыть в браузере», потом попробуй снова.';
+
   const ua = navigator.userAgent;
   if(/iPad|iPhone|iPod/.test(ua))
     return 'Нажми «Поделиться» внизу браузера, пролистай список и выбери «На экран „Домой“».';
@@ -707,6 +740,7 @@ async function doInstall(){
     return;
   }
   $('ht-p').textContent = hint();
+  $('upd').classList.remove('on');
   $('veil').classList.add('on');
   $('howto').classList.add('on');
 }
@@ -715,6 +749,7 @@ async function doInstall(){
    7. ШТОРКА ПАКА
    ═══════════════════════════════════════════════════════════════ */
 function openSheet(){
+  $('upd').classList.remove('on');
   $('sh-t').textContent = PACK.title;
   $('sh-p').textContent = PACK.note;
   $('sh-strip').innerHTML = PACK.items.map(p =>
@@ -729,6 +764,7 @@ function closeSheet(){
   $('veil').classList.remove('on');
   $('sheet').classList.remove('on');
   $('howto').classList.remove('on');
+  if(waiting && !$('draw').classList.contains('on')) $('upd').classList.add('on');
 }
 $('veil').onclick = closeSheet;
 $('buy').onclick = () => {
@@ -794,6 +830,9 @@ document.addEventListener('visibilitychange', () => {
 
 function show(id){
   ['lib','list','draw'].forEach(s => $(s).classList.toggle('on', s === id));
+  /* на обводке внизу своя панель — полоска обновления там мешала бы */
+  if(id === 'draw') $('upd').classList.remove('on');
+  else if(waiting)  $('upd').classList.add('on');
 }
 
 async function openDraw(it){
@@ -920,14 +959,57 @@ $('hide').onclick = () => panel(false);
 $('tab').onclick  = () => panel(true);
 
 /* ═══════════════════════════════════════════════════════════════
-   9. СТАРТ
+   9. ОБНОВЛЕНИЕ ПРИЛОЖЕНИЯ
+   ═══════════════════════════════════════════════════════════════
+   Новая версия скачивается в фоне и ждёт. Полоска внизу даёт
+   применить её сразу; если не нажать — встанет при следующем
+   запуске, как обычно. Появляется только когда есть что обновлять. */
+let waiting = null, updT = null, reloading = false;
+
+function showUpdate(worker){
+  waiting = worker;
+  $('upd').classList.add('on');
+  clearTimeout(updT);
+  updT = setTimeout(() => $('upd').classList.remove('on'), 14000);
+}
+
+$('updgo').onclick = () => {
+  $('upd').classList.remove('on');
+  if(waiting) waiting.postMessage({type:'SKIP_WAITING'});
+};
+
+function watchSW(){
+  if(!('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if(reg.waiting && navigator.serviceWorker.controller) showUpdate(reg.waiting);
+
+    reg.addEventListener('updatefound', () => {
+      const fresh = reg.installing;
+      if(!fresh) return;
+      fresh.addEventListener('statechange', () => {
+        /* controller есть — значит это обновление, а не первая установка */
+        if(fresh.state === 'installed' && navigator.serviceWorker.controller) showUpdate(fresh);
+      });
+    });
+  }).catch(() => {});
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(reloading) return;
+    reloading = true;
+    location.reload();
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   10. СТАРТ
    ═══════════════════════════════════════════════════════════════ */
 (async () => {
   db = await openDB();
   flags = (await getM('flags')) || {};
   mine  = (await allSk()).sort((a,b) => b.added - a.added);
   shelves();
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  watchSW();
 })();
 </script>
 </body>
